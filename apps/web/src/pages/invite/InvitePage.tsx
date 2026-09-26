@@ -75,7 +75,7 @@ export default function InvitePage() {
   };
 
   const copyLink = (code: string) => {
-    const url = `${appUrl}/join/${code}`;
+    const url = `${appUrl}/signup?invite=${encodeURIComponent(code)}`;
     void navigator.clipboard.writeText(url).then(() => {
       setCopiedCode(code);
       setTimeout(() => setCopiedCode(null), 2000);
@@ -112,7 +112,7 @@ export default function InvitePage() {
             <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 flex items-center gap-2 min-w-0">
               <Link2 className="w-4 h-4 text-white/40 shrink-0" />
               <span className="text-white text-sm font-mono truncate">
-                {appUrl}/join/{activeCode.code}
+                {appUrl}/signup?invite={activeCode.code}
               </span>
             </div>
             <button

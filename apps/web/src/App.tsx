@@ -51,7 +51,6 @@ const TopicFeed = lazy(() => import("@/pages/topics/TopicFeed"));
 const Collections = lazy(() => import("@/pages/collections/Collections"));
 const Series = lazy(() => import("@/pages/series/Series"));
 const IncomePage = lazy(() => import("@/pages/income/IncomePage"));
-const CreatorAnalytics = lazy(() => import("@/pages/analytics/CreatorAnalytics"));
 const PromotionsPage = lazy(() => import("@/pages/promotions/PromotionsPage"));
 const InvitePage = lazy(() => import("@/pages/invite/InvitePage"));
 const Portfolio = lazy(() => import("@/pages/portfolio/Portfolio"));
@@ -247,7 +246,8 @@ function Router() {
     <Switch>
       <Route path="/login"><GuestGuard><Auth /></GuestGuard></Route>
       <Route path="/signup"><GuestGuard><Auth /></GuestGuard></Route>
-      <Route path="/register"><Redirect to="/signup" /></Route>
+      <Route path="/register"><Redirect to={`/signup${window.location.search}`} /></Route>
+      <Route path="/join/:code">{params => <Redirect to={`/signup?invite=${encodeURIComponent(params.code)}`} />}</Route>
       <Route path="/auth/magic" component={Auth} />
       <Route path="/auth/oauth-complete" component={Auth} />
       <Route path="/verify-email" component={VerifyEmailPage} />
@@ -382,7 +382,7 @@ function Router() {
         <AuthGuard><PaymentComplete /></AuthGuard>
       </Route>
       <Route path="/analytics">
-        <AuthGuard><CreatorAnalytics /></AuthGuard>
+        <Redirect to="/promotions" />
       </Route>
       <Route path="/promotions">
         <AuthGuard><PromotionsPage /></AuthGuard>

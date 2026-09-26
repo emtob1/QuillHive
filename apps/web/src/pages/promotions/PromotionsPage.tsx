@@ -35,6 +35,21 @@ interface Overview {
   avgEngagementRate: number;
 }
 
+interface SpendBreakdown {
+  type?: string;
+  currency?: string;
+  amountCents: number;
+}
+
+interface IncomeTransaction {
+  id: number;
+  amount: number;
+  currency: string;
+  source: string;
+  description: string | null;
+  date: string;
+}
+
 type PostOption = { id: number; title: string };
 
 const PLAN_LABELS: Record<string, string> = {
@@ -99,6 +114,9 @@ export default function PromotionsPage() {
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [trend, setTrend] = useState<SpendPoint[]>([]);
+  const [spendByType, setSpendByType] = useState<SpendBreakdown[]>([]);
+  const [spendByCurrency, setSpendByCurrency] = useState<SpendBreakdown[]>([]);
+  const [transactions, setTransactions] = useState<IncomeTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [boostTarget, setBoostTarget] = useState<{ id: number; title: string; plan?: PlanKey } | null>(null);
   const [myPosts, setMyPosts] = useState<PostOption[]>([]);
@@ -145,10 +163,16 @@ export default function PromotionsPage() {
         overview?: Overview;
         campaigns?: CampaignRow[];
         spendingTrend?: SpendPoint[];
+        spendByType?: SpendBreakdown[];
+        spendByCurrency?: SpendBreakdown[];
+        transactions?: IncomeTransaction[];
       }) => {
         setOverview(data.overview ?? null);
         setCampaigns(Array.isArray(data.campaigns) ? data.campaigns : []);
         setTrend(Array.isArray(data.spendingTrend) ? data.spendingTrend : []);
+        setSpendByType(Array.isArray(data.spendByType) ? data.spendByType : []);
+        setSpendByCurrency(Array.isArray(data.spendByCurrency) ? data.spendByCurrency : []);
+        setTransactions(Array.isArray(data.transactions) ? data.transactions : []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -277,6 +301,47 @@ export default function PromotionsPage() {
         </div>
       )}
 
+      <div className="grid gap-4 md:grid-cols-2 mb-8">
+        <section className="bg-white/5 border border-white/10 rounded-xl p-5">
+          <h2 className="text-white font-semibold mb-4">Spend by promotion type</h2>
+          {spendByType.length === 0 ? (
+            <p className="text-sm text-white/40">No promotion spend in this period.</p>
+          ) : (
+            <div className="space-y-3">
+              {spendByType.map(item => (
+                <div key={item.type}>
+                  <div className="flex justify-between gap-3 text-sm mb-1">
+                    <span className="text-white/70">{PLAN_LABELS[item.type ?? ""] ?? item.type}</span>
+                    <span className="text-white font-medium">${((item.amountCents ?? 0) / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-amber-400"
+                      style={{ width: `${Math.min(100, (item.amountCents / Math.max(...spendByType.map(entry => entry.amountCents), 1)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+        <section className="bg-white/5 border border-white/10 rounded-xl p-5">
+          <h2 className="text-white font-semibold mb-4">Spend by currency</h2>
+          {spendByCurrency.length === 0 ? (
+            <p className="text-sm text-white/40">No currency totals in this period.</p>
+          ) : (
+            <div className="divide-y divide-white/10">
+              {spendByCurrency.map(item => (
+                <div key={item.currency} className="flex items-center justify-between py-2.5 text-sm">
+                  <span className="text-white/60">{item.currency}</span>
+                  <span className="text-white font-medium">{item.currency} {(item.amountCents / 100).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
       {activeCampaigns.length > 0 && (
         <div className="mb-8">
           <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
@@ -336,6 +401,40 @@ export default function PromotionsPage() {
           </div>
         )}
       </div>
+
+      <section className="mt-8">
+        <h2 className="text-white font-semibold mb-4">Income transactions</h2>
+        {transactions.length === 0 ? (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
+            <p className="text-white/60 text-sm">No income transactions in this period.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto bg-white/5 border border-white/10 rounded-xl">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-white/40 text-xs">
+                  <th className="p-3 text-left font-medium">Date</th>
+                  <th className="p-3 text-left font-medium">Source</th>
+                  <th className="p-3 text-left font-medium hidden md:table-cell">Description</th>
+                  <th className="p-3 text-right font-medium">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {transactions.map(transaction => (
+                  <tr key={transaction.id}>
+                    <td className="p-3 text-white/60 whitespace-nowrap">{new Date(transaction.date).toLocaleDateString()}</td>
+                    <td className="p-3 text-white/70 capitalize">{transaction.source}</td>
+                    <td className="p-3 text-white/50 hidden md:table-cell">{transaction.description ?? "-"}</td>
+                    <td className="p-3 text-right text-emerald-400 font-medium whitespace-nowrap">
+                      +{transaction.currency} {transaction.amount.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {showPostPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">

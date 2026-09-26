@@ -294,11 +294,6 @@ export function AppLayout({ children, publicPage = false }: AppLayoutProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider px-3 py-1">Professional</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
-                    <Link href="/analytics" className="cursor-pointer w-full flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4" /> Analytics
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link href="/promotions" className="cursor-pointer w-full flex items-center gap-2">
                       <Sparkles className="w-4 h-4" /> Promotions
                     </Link>

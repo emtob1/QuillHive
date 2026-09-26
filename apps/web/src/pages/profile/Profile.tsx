@@ -8,7 +8,6 @@ import { PostCard } from '@/components/post/PostCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { StreakWidget } from '@/components/profile/StreakWidget';
 import AchievementBadgeRow from '@/components/profile/AchievementBadgeRow';
 import WritingStreakWidget from '@/components/profile/WritingStreakWidget';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,7 +22,7 @@ import {
   MapPin, Link as LinkIcon, Calendar, UserPlus, UserCheck, Briefcase, Plus, Trash2,
   Eye, EyeOff, Lock, Upload, Image as ImageIcon, Loader2, Handshake, DollarSign,
   Pencil, X, ExternalLink, Sparkles, GraduationCap, Globe, Facebook, Linkedin, Twitter, Instagram,
-  ShieldCheck, AlertTriangle, BarChart3, Heart, MessageCircle, ArrowUpRight, Users, Zap, Rocket, TrendingUp, Clock, Flame, Camera,
+  ShieldCheck, AlertTriangle, BarChart3, MessageCircle, Users, Zap, Rocket, TrendingUp, Clock, Flame, Camera,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { apiUrl, getStoredToken, mediaUrl } from '@/lib/api';
@@ -31,10 +30,7 @@ import { ImageUploadField } from '@/components/media/ImageUploadField';
 import { useT } from '@/lib/i18n';
 import { ReputationTimeline } from '@/components/trust/ReputationTimeline';
 import { CreatorLevelBadge, CreatorLevelProgressPanel } from '@/components/trust/CreatorLevelBadge';
-import { CreatorMomentumHQ } from '@/components/profile/CreatorMomentumHQ';
-import { ProfileStrengthMeter } from '@/components/profile/ProfileStrengthMeter';
 import { BackButton } from '@/components/ui/BackButton';
-import { OpportunityPanel } from '@/components/dashboard/OpportunityPanel';
 import { ReportDialog } from '@/components/report/ReportDialog';
 
 interface PortfolioItem {
@@ -56,27 +52,6 @@ interface CreatorPublicStats {
   postCount: number;
   portfolioCount: number;
   weeklyFollowerGrowth: number;
-}
-
-interface TopPost {
-  title?: string;
-  excerpt?: string;
-  viewsCount: number;
-  likesCount: number;
-}
-
-interface ProfileAnalytics {
-  totalViews: number;
-  totalLikes: number;
-  totalComments: number;
-  totalPosts: number;
-  followers: number;
-  engagementRate: number;
-  postReach: number;
-  followerGrowth: { last30Days: number; percentage: number };
-  dailyFollowerGrowth: number;
-  topPosts: TopPost[];
-  reachMultiplier: number;
 }
 
 interface BoostRequest {
@@ -321,9 +296,6 @@ export default function Profile() {
   // Creator public stats (visible to everyone)
   const [creatorPublicStats, setCreatorPublicStats] = useState<CreatorPublicStats | null>(null);
 
-  // Profile analytics state (owner only)
-  const [profileAnalytics, setProfileAnalytics] = useState<ProfileAnalytics | null>(null);
-  const analyticsTopPost = profileAnalytics?.topPosts?.[0];
   const [boostRequests, setBoostRequests] = useState<BoostRequest[]>([]);
   const [boostsLoading, setBoostsLoading] = useState(false);
 
@@ -369,10 +341,6 @@ export default function Profile() {
         .then(d => { if (d) setProfileTrust({ tier: d.tier, uti: Math.round(d.uti ?? 0), creatorLevel: d.creatorLevel }); })
         .catch(() => {});
       if (isMe) {
-        fetch('/api/analytics/dashboard', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
-          .then(r => r.ok ? r.json() : null)
-          .then(d => { if (d) setProfileAnalytics(d); })
-          .catch(() => {});
         setBoostsLoading(true);
         fetch('/api/boost/my', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
           .then(r => r.ok ? r.json() : null)
@@ -835,12 +803,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {isMe && (
-          <div className="mb-8">
-            <StreakWidget />
-          </div>
-        )}
-
         {profileTrust && creatorPublicStats && (
           <div className="mb-6">
             <CreatorLevelProgressPanel
@@ -877,95 +839,10 @@ export default function Profile() {
           </div>
         )}
 
-        {isMe && (
-          <div className="mb-8 rounded-2xl border border-border/60 bg-card p-4 md:p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div>
-                <h2 className="text-xl font-serif font-semibold flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-primary" /> {t('dashboard.creatorAnalytics', 'Creator Analytics')}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t('dashboard.profileAnalyticsDesc', 'Your performance at a glance')}
-                </p>
-              </div>
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs">
-                  <ArrowUpRight className="w-3.5 h-3.5" /> {t('dashboard.viewFullDashboard', 'View Full Dashboard')}
-                </Button>
-              </Link>
-            </div>
-
-            {!profileAnalytics ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-2xl" />)}
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {[
-                    { label: t('dashboard.totalViews', 'Total Views'), value: (profileAnalytics.totalViews ?? 0).toLocaleString(), icon: Eye, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-                    { label: t('dashboard.totalLikes', 'Total Likes'), value: (profileAnalytics.totalLikes ?? 0).toLocaleString(), icon: Heart, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                    { label: t('dashboard.comments', 'Comments'), value: (profileAnalytics.totalComments ?? 0).toLocaleString(), icon: MessageCircle, color: 'text-violet-500', bg: 'bg-violet-500/10' },
-                    { label: t('dashboard.postsPublished', 'Posts Published'), value: (profileAnalytics.totalPosts ?? 0).toLocaleString(), icon: BarChart3, color: 'text-primary', bg: 'bg-primary/10' },
-                    { label: t('dashboard.followers', 'Followers'), value: (profileAnalytics.followers ?? 0).toLocaleString(), icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { label: t('dashboard.engagementRate', 'Engagement Rate'), value: `${profileAnalytics.engagementRate ?? 0}%`, icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                  ].map(card => {
-                    const Icon = card.icon;
-                    return (
-                      <div key={card.label} className="rounded-2xl border border-border/60 p-4 flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl ${card.bg} ${card.color} flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">{card.label}</p>
-                          <p className="text-xl font-bold text-foreground">{card.value}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-border/60 p-4 bg-muted/20">
-                    <p className="text-sm font-medium text-foreground">{t('dashboard.followerGrowth', 'Follower Growth')}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t('dashboard.last30Days', 'last 30 days')}</p>
-                    <div className="mt-3 flex items-end justify-between">
-                      <p className="text-3xl font-bold text-foreground">+{profileAnalytics.followerGrowth?.last30Days ?? 0}</p>
-                      <p className="text-sm text-emerald-500 font-medium">{profileAnalytics.followerGrowth?.percentage ?? 0}%</p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-border/60 p-4">
-                    <p className="text-sm font-medium text-foreground mb-3">{t('dashboard.bestPost', 'Best Performing Post')}</p>
-                    {analyticsTopPost ? (
-                      <div className="space-y-2">
-                        <p className="font-semibold text-foreground line-clamp-2">{analyticsTopPost.title || analyticsTopPost.excerpt || t('dashboard.topPostFallback', 'Top post')}</p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{(analyticsTopPost.viewsCount ?? 0).toLocaleString()} views</span>
-                          <span>{(analyticsTopPost.likesCount ?? 0).toLocaleString()} likes</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{t('dashboard.noTopPostYet', 'Publish more to see your best post here.')}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {data?.user?.username && (
           <div className="mb-8 grid gap-4 md:grid-cols-2">
             <AchievementBadgeRow username={data.user.username} isMe={isMe} />
             <WritingStreakWidget username={isMe ? undefined : data.user.username} />
-          </div>
-        )}
-
-        {isMe && (
-          <div className="mb-8 grid gap-4 md:grid-cols-2">
-            <ProfileStrengthMeter />
-            <OpportunityPanel />
           </div>
         )}
 
@@ -982,9 +859,7 @@ export default function Profile() {
               { value: 'education', label: t('profile.education', 'Education') },
               ...(isMe || serviceListings.length > 0 ? [{ value: 'services', label: t('profile.servicesTab', 'Services') }] : []),
               ...(isMe ? [{ value: 'reputation', label: t('profile.reputation', 'Reputation') }] : []),
-              ...(isMe ? [{ value: 'analytics', label: t('profile.analytics', 'Analytics') }] : []),
               ...(isMe ? [{ value: 'boosts', label: t('profile.boosts', 'My Boosts') }] : []),
-              ...(isMe ? [{ value: 'momentum', label: 'Momentum HQ' }] : []),
             ].map(tab => (
               <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 pt-2 text-base data-[state=active]:text-foreground text-muted-foreground font-medium whitespace-nowrap">
                 {tab.label}
@@ -1312,24 +1187,6 @@ export default function Profile() {
                 <p className="text-sm text-muted-foreground">{t('profile.reputationDesc', 'Your trust score history and reputation events')}</p>
               </div>
               <ReputationTimeline userId={String(data?.user?.id ?? "")} />
-            </TabsContent>
-          )}
-
-          {isMe && (
-            <TabsContent value="analytics" className="focus-visible:outline-none">
-              <div className="text-sm text-muted-foreground">{t('dashboard.profileAnalyticsDesc', 'Your performance at a glance')}</div>
-            </TabsContent>
-          )}
-
-          {isMe && (
-            <TabsContent value="momentum" className="focus-visible:outline-none">
-              <div className="mb-6">
-                <h2 className="text-xl font-serif font-semibold flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" /> Momentum HQ
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">Your creator level, token progress, and how recruiters are finding you.</p>
-              </div>
-              <CreatorMomentumHQ userId={data?.user?.id ?? 0} isMe={true} />
             </TabsContent>
           )}
 

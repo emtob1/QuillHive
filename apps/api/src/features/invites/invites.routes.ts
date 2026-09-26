@@ -1,8 +1,8 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import crypto from "crypto";
 import { db } from "@workspace/db";
-import { inviteCodesTable } from "@workspace/db/schema";
-import { eq, and, isNull, or } from "drizzle-orm";
+import { inviteCodesTable, usersTable } from "@workspace/db/schema";
+import { eq, and, isNull, or, count } from "drizzle-orm";
 import { requireAuth } from "../../middleware/admin";
 
 interface AuthedReq extends Request {
@@ -29,7 +29,7 @@ invitesRouter.post("/generate", requireAuth, async (req: Request, res: Response)
   if (existingPermanent) {
     res.json({
       invite: existingPermanent,
-      shareUrl: `${origin}/register?invite=${existingPermanent.code}`,
+      shareUrl: `${origin}/signup?invite=${existingPermanent.code}`,
     });
     return;
   }
@@ -40,7 +40,7 @@ invitesRouter.post("/generate", requireAuth, async (req: Request, res: Response)
     .values({ code, createdBy: userId, expiresAt: null })
     .returning();
 
-  res.json({ invite, shareUrl: `${origin}/register?invite=${code}` });
+  res.json({ invite, shareUrl: `${origin}/signup?invite=${code}` });
 });
 
 invitesRouter.get("/mine", requireAuth, async (req: Request, res: Response) => {
@@ -50,7 +50,11 @@ invitesRouter.get("/mine", requireAuth, async (req: Request, res: Response) => {
     .from(inviteCodesTable)
     .where(eq(inviteCodesTable.createdBy, userId))
     .orderBy(inviteCodesTable.createdAt);
-  res.json({ codes });
+  const [{ totalInvited }] = await db
+    .select({ totalInvited: count() })
+    .from(usersTable)
+    .where(eq(usersTable.referredBy, userId));
+  res.json({ codes, totalInvited });
 });
 
 invitesRouter.get("/validate/:code", async (req: Request, res: Response) => {

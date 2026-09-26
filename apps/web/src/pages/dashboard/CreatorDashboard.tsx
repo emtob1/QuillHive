@@ -18,6 +18,7 @@ import { MomentumCard } from "@/components/dashboard/MomentumCard";
 import { ContentIntelligenceCard } from "@/components/dashboard/ContentIntelligenceCard";
 import { OpportunitySignals } from "@/components/dashboard/OpportunitySignals";
 import { ProfileStrengthMeter } from "@/components/profile/ProfileStrengthMeter";
+import { CreatorMomentumHQ } from "@/components/profile/CreatorMomentumHQ";
 
 type TrustScore = {
   uti: number;
@@ -267,6 +268,8 @@ export default function CreatorDashboard() {
               <GrowthScoreCard />
               <OpportunityPanel />
             </div>
+
+            {user?.id && <CreatorMomentumHQ userId={user.id} isMe />}
 
             {/* Profile Strength + Opportunity Signals */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

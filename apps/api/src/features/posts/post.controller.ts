@@ -241,8 +241,6 @@ export const listRecentSparks = async (req: Request, res: Response) => {
   }>();
 
   for (const row of rows) {
-    if (stories.has(row.authorId)) continue;
-
     const viewedBy = Array.isArray(row.viewedBy) ? row.viewedBy : [];
     const viewed = viewedBy.includes(viewerId);
     const story = stories.get(row.authorId) ?? {

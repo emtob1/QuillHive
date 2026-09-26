@@ -1515,6 +1515,7 @@ function InvitesSection() {
   const t = useT();
   const token = getStoredToken();
   const [codes, setCodes] = useState<InviteRow[]>([]);
+  const [totalInvited, setTotalInvited] = useState(0);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -1523,7 +1524,8 @@ function InvitesSection() {
       const res = await fetch('/api/invites/mine', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const data = await res.json();
       setCodes(Array.isArray(data?.codes) ? data.codes : []);
-    } catch { setCodes([]); } finally { setLoading(false); }
+      setTotalInvited(Number(data?.totalInvited) || 0);
+    } catch { setCodes([]); setTotalInvited(0); } finally { setLoading(false); }
   };
   useEffect(() => { void load(); /* eslint-disable-next-line */ }, []);
 
@@ -1541,7 +1543,7 @@ function InvitesSection() {
   };
 
   const copyLink = async (code: string) => {
-    const url = `${window.location.origin}/register?invite=${code}`;
+    const url = `${window.location.origin}/signup?invite=${encodeURIComponent(code)}`;
     try { await navigator.clipboard.writeText(url); toast({ title: t('settings.inviteLinkCopied') }); }
     catch { toast({ title: t('settings.copyFailed'), variant: 'destructive' }); }
   };
@@ -1558,15 +1560,15 @@ function InvitesSection() {
       <Separator />
 
       {/* Referral progress tracker */}
-      {used.length > 0 && (() => {
+      {totalInvited > 0 && (() => {
         const milestones = [
           { count: 1, label: '1 friend', reward: 'Profile badge' },
           { count: 3, label: '3 friends', reward: '1 month Pro trial' },
           { count: 5, label: '5 friends', reward: 'Boost credit' },
           { count: 10, label: '10 friends', reward: 'Full Pro access' },
         ];
-        const nextMilestone = milestones.find(m => used.length < m.count);
-        const lastMilestone = [...milestones].reverse().find(m => used.length >= m.count);
+        const nextMilestone = milestones.find(m => totalInvited < m.count);
+        const lastMilestone = [...milestones].reverse().find(m => totalInvited >= m.count);
         return (
           <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -1574,17 +1576,17 @@ function InvitesSection() {
               <h3 className="font-semibold text-sm">{t('settings.referralRewards')}</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              {t('settings.youReferred')} <strong>{used.length}</strong> {used.length === 1 ? t('settings.person') : t('settings.people')}.
+              {t('settings.youReferred')} <strong>{totalInvited}</strong> {totalInvited === 1 ? t('settings.person') : t('settings.people')}.
               {lastMilestone && <span className="text-primary"> {t('settings.youUnlocked')}: {lastMilestone.reward}!</span>}
             </p>
             {nextMilestone && (
               <div>
                 <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
                   <span>{t('settings.nextReward')}: <strong>{nextMilestone.reward}</strong> at {nextMilestone.label}</span>
-                  <span>{used.length}/{nextMilestone.count}</span>
+                  <span>{totalInvited}/{nextMilestone.count}</span>
                 </div>
                 <div className="w-full bg-border rounded-full h-2">
-                  <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${Math.min((used.length / nextMilestone.count) * 100, 100)}%` }} />
+                  <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${Math.min((totalInvited / nextMilestone.count) * 100, 100)}%` }} />
                 </div>
               </div>
             )}
